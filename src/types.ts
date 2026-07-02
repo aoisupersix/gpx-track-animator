@@ -18,6 +18,18 @@ export type PixelPoint = {
     y: number
 }
 
+export type RoutePin = {
+    id: string
+    lon: number
+    lat: number
+    /**
+     * Position along the track as a fraction of the total distance (0..1).
+     * The pin appears once the animation head reaches this position.
+     */
+    progress: number
+    label: string
+}
+
 export type RenderSettings = {
     /** Output width in pixels (must be even for H.264). */
     width: number
@@ -31,4 +43,10 @@ export type RenderSettings = {
     lineColor: string
     lineOpacity: number
     lineWidth: number
+    /** Pin drop-in start height as a multiple of the pin radius (0 disables it). */
+    pinDropHeight: number
+    /** Duration of a pin's drop-in animation in seconds. */
+    pinDropSec: number
+    /** Pin landing bounce (0 = smooth ease, 1 = full bounce). */
+    pinBounce: number
 }

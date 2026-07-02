@@ -191,6 +191,51 @@ export const SettingsForm = ({ settings, disabled, onChange }: Props) => {
                     }
                 />
             </label>
+            <label>
+                {t('settings.pinDropHeight')}
+                <input
+                    type="number"
+                    min={0}
+                    max={10}
+                    step={0.5}
+                    value={settings.pinDropHeight}
+                    onChange={(event) =>
+                        applyNumber(event, (pinDropHeight) =>
+                            update({ pinDropHeight }),
+                        )
+                    }
+                />
+            </label>
+            <label>
+                {t('settings.pinDropSec')}
+                <input
+                    type="number"
+                    min={0.05}
+                    max={2}
+                    step={0.05}
+                    value={settings.pinDropSec}
+                    onChange={(event) =>
+                        applyNumber(event, (pinDropSec) =>
+                            update({ pinDropSec }),
+                        )
+                    }
+                />
+            </label>
+            <label>
+                {t('settings.pinBounce', {
+                    value: settings.pinBounce.toFixed(2),
+                })}
+                <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={settings.pinBounce}
+                    onChange={(event) =>
+                        applyNumber(event, (pinBounce) => update({ pinBounce }))
+                    }
+                />
+            </label>
         </fieldset>
     )
 }

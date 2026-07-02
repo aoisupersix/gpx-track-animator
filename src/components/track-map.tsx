@@ -4,15 +4,27 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useI18n } from '../lib/i18n'
 import { osmRasterStyle } from '../lib/osm-style'
 import { partialPath } from '../lib/pixel-path'
-import { drawTrackFrame, toFrameStyle } from '../lib/track-renderer'
+import {
+    drawPins,
+    drawTrackFrame,
+    toFrameStyle,
+    toPinStyle,
+} from '../lib/track-renderer'
 
-import type { PixelPoint, RenderSettings, Track } from '../types'
+import type { PinRender } from '../lib/track-renderer'
+import type { RenderSettings, RoutePin, Track } from '../types'
+import type { PixelPoint } from '../types'
+import type { LngLat } from 'maplibre-gl'
 
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 type Props = {
     track: Track | null
     settings: RenderSettings
+    pins: RoutePin[]
+    /** When true, clicking the map places a new pin. */
+    addingPin: boolean
+    onPlacePin: (lngLat: LngLat) => void
     /** Incremented by the parent each time preview playback is requested. */
     previewRequestId: number
 }
@@ -22,15 +34,25 @@ type Props = {
  * the same interpolation and drawing code as the exports, so the preview is
  * identical to the exported output (WYSIWYG).
  */
-export const TrackMap = ({ track, settings, previewRequestId }: Props) => {
+export const TrackMap = ({
+    track,
+    settings,
+    pins,
+    addingPin,
+    onPlacePin,
+    previewRequestId,
+}: Props) => {
     const { t } = useI18n()
     const containerRef = useRef<HTMLDivElement | null>(null)
     const overlayRef = useRef<HTMLCanvasElement | null>(null)
     const mapRef = useRef<maplibregl.Map | null>(null)
     const trackRef = useRef<Track | null>(null)
     const settingsRef = useRef<RenderSettings>(settings)
+    const pinsRef = useRef<RoutePin[]>(pins)
     /** Currently drawn animation progress; 1 means the full track. */
     const progressRef = useRef(1)
+    /** Elapsed playback time in seconds; Infinity means fully settled. */
+    const elapsedRef = useRef(Infinity)
 
     const redraw = useCallback(() => {
         const map = mapRef.current
@@ -74,6 +96,21 @@ export const TrackMap = ({ track, settings, previewRequestId }: Props) => {
             toFrameStyle(settingsRef.current),
             false,
         )
+        const pinRenders = pinsRef.current.map((pin): PinRender => {
+            const projected = map.project([pin.lon, pin.lat])
+            return {
+                pixel: { x: projected.x, y: projected.y },
+                progress: pin.progress,
+                label: pin.label,
+            }
+        })
+        drawPins(
+            ctx,
+            pinRenders,
+            elapsedRef.current,
+            settingsRef.current.durationSec,
+            toPinStyle(settingsRef.current),
+        )
     }, [])
 
     useEffect(() => {
@@ -99,6 +136,7 @@ export const TrackMap = ({ track, settings, previewRequestId }: Props) => {
     useEffect(() => {
         trackRef.current = track
         progressRef.current = 1
+        elapsedRef.current = Infinity
         const map = mapRef.current
         if (map !== null && track !== null) {
             map.fitBounds(track.bounds, { padding: 60, duration: 0 })
@@ -112,18 +150,49 @@ export const TrackMap = ({ track, settings, previewRequestId }: Props) => {
     }, [settings, redraw])
 
     useEffect(() => {
+        pinsRef.current = pins
+        redraw()
+    }, [pins, redraw])
+
+    useEffect(() => {
+        const map = mapRef.current
+        if (map === null || !addingPin) {
+            return
+        }
+        const canvas = map.getCanvas()
+        canvas.style.cursor = 'crosshair'
+        const handleClick = (event: maplibregl.MapMouseEvent): void => {
+            onPlacePin(event.lngLat)
+        }
+        map.on('click', handleClick)
+        return () => {
+            map.off('click', handleClick)
+            canvas.style.cursor = ''
+        }
+    }, [addingPin, onPlacePin])
+
+    useEffect(() => {
         if (previewRequestId === 0 || trackRef.current === null) {
             return
         }
         const durationMs = Math.max(settingsRef.current.durationSec, 0.1) * 1000
+        // Play through the end hold so late pins finish their drop-in, matching
+        // the exported video.
+        const totalMs =
+            durationMs + Math.max(settingsRef.current.endHoldSec, 0) * 1000
         const start = performance.now()
         let frameHandle = 0
         const tick = (now: number): void => {
-            const progress = Math.min((now - start) / durationMs, 1)
-            progressRef.current = progress
-            redraw()
-            if (progress < 1) {
+            const elapsedMs = now - start
+            progressRef.current = Math.min(elapsedMs / durationMs, 1)
+            elapsedRef.current = elapsedMs / 1000
+            if (elapsedMs < totalMs) {
+                redraw()
                 frameHandle = requestAnimationFrame(tick)
+            } else {
+                progressRef.current = 1
+                elapsedRef.current = Infinity
+                redraw()
             }
         }
         frameHandle = requestAnimationFrame(tick)
@@ -138,6 +207,9 @@ export const TrackMap = ({ track, settings, previewRequestId }: Props) => {
             <canvas ref={overlayRef} className="track-map-overlay" />
             {track === null && (
                 <div className="track-map-empty">{t('map.empty')}</div>
+            )}
+            {addingPin && track !== null && (
+                <div className="track-map-hint">{t('pins.adding')}</div>
             )}
         </div>
     )

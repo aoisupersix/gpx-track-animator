@@ -39,4 +39,7 @@ export const DEFAULT_SETTINGS: RenderSettings = {
     lineColor: '#2b2b96',
     lineOpacity: 0.7,
     lineWidth: 10,
+    pinDropHeight: 3.5,
+    pinDropSec: 0.5,
+    pinBounce: 1,
 }

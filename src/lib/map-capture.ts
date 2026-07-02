@@ -3,13 +3,16 @@ import maplibregl from 'maplibre-gl'
 import { EXPORT_PADDING_PX, MAP_IDLE_TIMEOUT_MS } from './constants'
 import { osmRasterStyle } from './osm-style'
 
-import type { PixelPoint, Track } from '../types'
+import type { PinRender } from './track-renderer'
+import type { PixelPoint, RoutePin, Track } from '../types'
 
 export type CapturedMap = {
     /** Base map rendered at the exact output size, without the track. */
     baseImage: ImageBitmap
     /** Track points projected to output pixel coordinates. */
     pixels: PixelPoint[]
+    /** Pins projected to output pixel coordinates. */
+    pins: PinRender[]
 }
 
 const waitForIdle = (map: maplibregl.Map): Promise<void> =>
@@ -47,6 +50,7 @@ const waitForIdle = (map: maplibregl.Map): Promise<void> =>
  */
 export const captureBaseMap = async (
     track: Track,
+    pins: RoutePin[],
     width: number,
     height: number,
 ): Promise<CapturedMap> => {
@@ -78,7 +82,15 @@ export const captureBaseMap = async (
             const projected = map.project([point.lon, point.lat])
             return { x: projected.x, y: projected.y }
         })
-        return { baseImage, pixels }
+        const pinRenders = pins.map((pin): PinRender => {
+            const projected = map.project([pin.lon, pin.lat])
+            return {
+                pixel: { x: projected.x, y: projected.y },
+                progress: pin.progress,
+                label: pin.label,
+            }
+        })
+        return { baseImage, pixels, pins: pinRenders }
     } finally {
         map.remove()
         container.remove()

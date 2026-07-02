@@ -10,9 +10,12 @@ import { DEFAULT_EXPORT_HEIGHT, DEFAULT_EXPORT_WIDTH } from './constants'
 import { h264CodecString, videoBitrate } from './encode-config'
 import { partialPath } from './pixel-path'
 import {
+    anyPinAnimating,
     createFrameContext,
+    drawPins,
     drawTrackFrame,
     toFrameStyle,
+    toPinStyle,
 } from './track-renderer'
 
 import type { RenderSettings, Track } from '../types'
@@ -62,16 +65,34 @@ export const renderMp4Blob = async (
     const holdFrames = Math.round(settings.endHoldSec * settings.fps)
     const totalFrames = animationFrames + holdFrames
     const style = toFrameStyle(settings)
+    const pinStyle = toPinStyle(settings)
     let lastProgress = -1
     for (let frame = 0; frame < totalFrames; frame++) {
         const progress = Math.min(frame / (animationFrames - 1), 1)
-        if (progress !== lastProgress) {
+        const elapsedSec = frame / settings.fps
+        // Keep redrawing while pins animate, even after the line is complete.
+        if (
+            progress !== lastProgress ||
+            anyPinAnimating(
+                captured.pins,
+                elapsedSec,
+                settings.durationSec,
+                pinStyle.animSec,
+            )
+        ) {
             const path = partialPath(
                 captured.pixels,
                 track.cumulative,
                 progress,
             )
             drawTrackFrame(ctx, captured.baseImage, path, style, true)
+            drawPins(
+                ctx,
+                captured.pins,
+                elapsedSec,
+                settings.durationSec,
+                pinStyle,
+            )
             lastProgress = progress
         }
         // Awaiting add() respects encoder backpressure and keeps the UI responsive.

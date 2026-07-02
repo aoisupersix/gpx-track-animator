@@ -1,7 +1,9 @@
 import {
     createFrameContext,
+    drawPins,
     drawTrackFrame,
     toFrameStyle,
+    toPinStyle,
 } from './track-renderer'
 
 import type { RenderSettings } from '../types'
@@ -22,6 +24,13 @@ export const renderPngBlob = (
         captured.pixels,
         toFrameStyle(settings),
         true,
+    )
+    drawPins(
+        ctx,
+        captured.pins,
+        Infinity,
+        settings.durationSec,
+        toPinStyle(settings),
     )
     return new Promise((resolve, reject) => {
         ctx.canvas.toBlob((blob) => {

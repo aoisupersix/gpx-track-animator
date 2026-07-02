@@ -137,6 +137,103 @@ body {
     width: 90px;
 }
 
+.pins {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid #d9dce3;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.pins legend {
+    padding: 0 4px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.pin-add-button {
+    padding: 6px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid #2b2b96;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #2b2b96;
+}
+
+.pin-add-button.active {
+    color: #ffffff;
+    background: #2b2b96;
+}
+
+.pin-add-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.pins-empty {
+    margin: 0;
+    font-size: 12px;
+    color: #5c6470;
+}
+
+.pin-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pin-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pin-position {
+    flex: none;
+    width: 40px;
+    font-size: 12px;
+    color: #5c6470;
+    text-align: right;
+}
+
+.pin-label-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+}
+
+.pin-delete-button {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    color: #b3261e;
+    border: 1px solid #d9dce3;
+    border-radius: 6px;
+    background: #ffffff;
+}
+
+.track-map-hint {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 14px;
+    font-size: 13px;
+    color: #ffffff;
+    border-radius: 16px;
+    background: rgba(43, 43, 150, 0.9);
+    pointer-events: none;
+}
+
 .export-buttons {
     display: flex;
     flex-direction: column;
