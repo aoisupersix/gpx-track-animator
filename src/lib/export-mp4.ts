@@ -6,12 +6,8 @@ import {
     canEncodeVideo,
 } from 'mediabunny'
 
-import {
-    EXPORT_HEIGHT,
-    EXPORT_WIDTH,
-    H264_CODEC_STRING,
-    VIDEO_BITRATE,
-} from './constants'
+import { DEFAULT_EXPORT_HEIGHT, DEFAULT_EXPORT_WIDTH } from './constants'
+import { h264CodecString, videoBitrate } from './encode-config'
 import { partialPath } from './pixel-path'
 import {
     createFrameContext,
@@ -28,9 +24,9 @@ import type { CapturedMap } from './map-capture'
  */
 export const isH264EncodeSupported = (): Promise<boolean> =>
     canEncodeVideo('avc', {
-        width: EXPORT_WIDTH,
-        height: EXPORT_HEIGHT,
-        bitrate: VIDEO_BITRATE,
+        width: DEFAULT_EXPORT_WIDTH,
+        height: DEFAULT_EXPORT_HEIGHT,
+        bitrate: videoBitrate(DEFAULT_EXPORT_WIDTH, DEFAULT_EXPORT_HEIGHT, 60),
     })
 
 /**
@@ -48,12 +44,14 @@ export const renderMp4Blob = async (
         captured.baseImage.width,
         captured.baseImage.height,
     )
+    const width = captured.baseImage.width
+    const height = captured.baseImage.height
     const target = new BufferTarget()
     const output = new Output({ format: new Mp4OutputFormat(), target })
     const source = new CanvasSource(ctx.canvas, {
         codec: 'avc',
-        bitrate: VIDEO_BITRATE,
-        fullCodecString: H264_CODEC_STRING,
+        bitrate: videoBitrate(width, height, settings.fps),
+        fullCodecString: h264CodecString(width, height, settings.fps),
     })
     output.addVideoTrack(source, { frameRate: settings.fps })
     await output.start()

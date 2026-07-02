@@ -19,6 +19,10 @@ export type PixelPoint = {
 }
 
 export type RenderSettings = {
+    /** Output width in pixels (must be even for H.264). */
+    width: number
+    /** Output height in pixels (must be even for H.264). */
+    height: number
     /** Duration of the start-to-end animation in seconds. */
     durationSec: number
     /** How long the full track stays visible at the end of the video, in seconds. */
