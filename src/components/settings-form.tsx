@@ -1,3 +1,10 @@
+import {
+    MAX_EXPORT_SIZE,
+    MIN_EXPORT_SIZE,
+    RESOLUTION_PRESETS,
+} from '../lib/constants'
+import { useI18n } from '../lib/i18n'
+
 import type { RenderSettings } from '../types'
 import type { ChangeEvent } from 'react'
 
@@ -17,16 +24,93 @@ const applyNumber = (
     }
 }
 
+/** H.264 needs even dimensions; keep values inside the supported range. */
+const clampSize = (value: number): number => {
+    const bounded = Math.min(Math.max(value, MIN_EXPORT_SIZE), MAX_EXPORT_SIZE)
+    return Math.round(bounded / 2) * 2
+}
+
+const CUSTOM = 'custom'
+
+const presetKey = (settings: RenderSettings): string => {
+    const match = RESOLUTION_PRESETS.find(
+        (preset) =>
+            preset.width === settings.width &&
+            preset.height === settings.height,
+    )
+    return match?.name ?? CUSTOM
+}
+
 export const SettingsForm = ({ settings, disabled, onChange }: Props) => {
+    const { t } = useI18n()
+
     const update = (patch: Partial<RenderSettings>): void => {
         onChange({ ...settings, ...patch })
     }
 
+    const handlePresetChange = (
+        event: ChangeEvent<HTMLSelectElement>,
+    ): void => {
+        const preset = RESOLUTION_PRESETS.find(
+            (item) => item.name === event.target.value,
+        )
+        if (preset !== undefined) {
+            update({ width: preset.width, height: preset.height })
+        }
+    }
+
     return (
         <fieldset className="settings" disabled={disabled}>
-            <legend>書き出し設定</legend>
+            <legend>{t('settings.legend')}</legend>
             <label>
-                アニメーション時間（秒）
+                {t('settings.resolution')}
+                <select
+                    className="resolution-select"
+                    value={presetKey(settings)}
+                    onChange={handlePresetChange}
+                >
+                    {RESOLUTION_PRESETS.map((preset) => (
+                        <option key={preset.name} value={preset.name}>
+                            {`${preset.name} (${preset.width}×${preset.height})`}
+                        </option>
+                    ))}
+                    <option value={CUSTOM} disabled>
+                        {t('preset.custom')}
+                    </option>
+                </select>
+            </label>
+            <label>
+                {t('settings.width')}
+                <input
+                    type="number"
+                    min={MIN_EXPORT_SIZE}
+                    max={MAX_EXPORT_SIZE}
+                    step={2}
+                    value={settings.width}
+                    onChange={(event) =>
+                        applyNumber(event, (width) =>
+                            update({ width: clampSize(width) }),
+                        )
+                    }
+                />
+            </label>
+            <label>
+                {t('settings.height')}
+                <input
+                    type="number"
+                    min={MIN_EXPORT_SIZE}
+                    max={MAX_EXPORT_SIZE}
+                    step={2}
+                    value={settings.height}
+                    onChange={(event) =>
+                        applyNumber(event, (height) =>
+                            update({ height: clampSize(height) }),
+                        )
+                    }
+                />
+            </label>
+            <label>
+                {t('settings.duration')}
                 <input
                     type="number"
                     min={0.5}
@@ -41,7 +125,7 @@ export const SettingsForm = ({ settings, disabled, onChange }: Props) => {
                 />
             </label>
             <label>
-                終了後の静止時間（秒）
+                {t('settings.endHold')}
                 <input
                     type="number"
                     min={0}
@@ -56,7 +140,7 @@ export const SettingsForm = ({ settings, disabled, onChange }: Props) => {
                 />
             </label>
             <label>
-                フレームレート
+                {t('settings.fps')}
                 <select
                     value={settings.fps}
                     onChange={(event) =>
@@ -68,7 +152,7 @@ export const SettingsForm = ({ settings, disabled, onChange }: Props) => {
                 </select>
             </label>
             <label>
-                線の色
+                {t('settings.lineColor')}
                 <input
                     type="color"
                     value={settings.lineColor}
@@ -78,7 +162,7 @@ export const SettingsForm = ({ settings, disabled, onChange }: Props) => {
                 />
             </label>
             <label>
-                線の太さ（px）
+                {t('settings.lineWidth')}
                 <input
                     type="number"
                     min={1}
@@ -91,7 +175,9 @@ export const SettingsForm = ({ settings, disabled, onChange }: Props) => {
                 />
             </label>
             <label>
-                線の不透明度（{settings.lineOpacity.toFixed(2)}）
+                {t('settings.lineOpacity', {
+                    value: settings.lineOpacity.toFixed(2),
+                })}
                 <input
                     type="range"
                     min={0.1}

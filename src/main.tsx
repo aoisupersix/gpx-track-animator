@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
 import { App } from './app'
+import { I18nProvider } from './lib/i18n'
 
 import './app.css'
 
@@ -12,6 +13,8 @@ if (rootElement === null) {
 
 createRoot(rootElement).render(
     <StrictMode>
-        <App />
+        <I18nProvider>
+            <App />
+        </I18nProvider>
     </StrictMode>,
 )

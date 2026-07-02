@@ -1,6 +1,7 @@
 import maplibregl from 'maplibre-gl'
 import { useCallback, useEffect, useRef } from 'react'
 
+import { useI18n } from '../lib/i18n'
 import { osmRasterStyle } from '../lib/osm-style'
 import { partialPath } from '../lib/pixel-path'
 import { drawTrackFrame, toFrameStyle } from '../lib/track-renderer'
@@ -22,6 +23,7 @@ type Props = {
  * identical to the exported output (WYSIWYG).
  */
 export const TrackMap = ({ track, settings, previewRequestId }: Props) => {
+    const { t } = useI18n()
     const containerRef = useRef<HTMLDivElement | null>(null)
     const overlayRef = useRef<HTMLCanvasElement | null>(null)
     const mapRef = useRef<maplibregl.Map | null>(null)
@@ -135,9 +137,7 @@ export const TrackMap = ({ track, settings, previewRequestId }: Props) => {
             <div ref={containerRef} className="track-map-canvas" />
             <canvas ref={overlayRef} className="track-map-overlay" />
             {track === null && (
-                <div className="track-map-empty">
-                    GPXファイルを読み込むと軌跡が表示されます
-                </div>
+                <div className="track-map-empty">{t('map.empty')}</div>
             )}
         </div>
     )

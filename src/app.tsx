@@ -3,14 +3,16 @@ import { useCallback, useEffect, useState } from 'react'
 import { ExportButtons } from './components/export-buttons'
 import { ExportProgress } from './components/export-progress'
 import { GpxFileInput } from './components/gpx-file-input'
+import { LanguageSwitcher } from './components/language-switcher'
 import { SettingsForm } from './components/settings-form'
 import { TrackMap } from './components/track-map'
-import { DEFAULT_SETTINGS, EXPORT_HEIGHT, EXPORT_WIDTH } from './lib/constants'
+import { DEFAULT_SETTINGS } from './lib/constants'
 import { downloadBlob } from './lib/download'
 import { isH264EncodeSupported, renderMp4Blob } from './lib/export-mp4'
 import { renderPngBlob } from './lib/export-png'
 import { buildTrack } from './lib/geo'
 import { GpxParseError, parseGpx } from './lib/gpx'
+import { useI18n } from './lib/i18n'
 import { captureBaseMap } from './lib/map-capture'
 
 import type { RenderSettings, Track } from './types'
@@ -22,6 +24,7 @@ const errorMessage = (error: unknown): string =>
     error instanceof Error ? error.message : String(error)
 
 export const App = () => {
+    const { t } = useI18n()
     const [track, setTrack] = useState<Track | null>(null)
     const [fileName, setFileName] = useState<string | null>(null)
     const [settings, setSettings] = useState<RenderSettings>(DEFAULT_SETTINGS)
@@ -50,23 +53,26 @@ export const App = () => {
         }
     }, [])
 
-    const handleFileSelected = useCallback(async (file: File) => {
-        try {
-            const text = await file.text()
-            const loaded = buildTrack(parseGpx(text))
-            setTrack(loaded)
-            setFileName(file.name)
-            setError(null)
-        } catch (cause) {
-            setTrack(null)
-            setFileName(null)
-            setError(
-                cause instanceof GpxParseError
-                    ? 'GPXファイルを解析できませんでした。トラック（trk）またはルート（rte）を含む正しいGPXファイルか確認してください。'
-                    : `ファイルの読み込みに失敗しました: ${errorMessage(cause)}`,
-            )
-        }
-    }, [])
+    const handleFileSelected = useCallback(
+        async (file: File) => {
+            try {
+                const text = await file.text()
+                const loaded = buildTrack(parseGpx(text))
+                setTrack(loaded)
+                setFileName(file.name)
+                setError(null)
+            } catch (cause) {
+                setTrack(null)
+                setFileName(null)
+                setError(
+                    cause instanceof GpxParseError
+                        ? t('error.parse')
+                        : t('error.fileLoad', { message: errorMessage(cause) }),
+                )
+            }
+        },
+        [t],
+    )
 
     const outputBaseName =
         fileName === null ? 'track' : fileName.replace(/\.gpx$/i, '')
@@ -80,8 +86,8 @@ export const App = () => {
         try {
             const captured = await captureBaseMap(
                 track,
-                EXPORT_WIDTH,
-                EXPORT_HEIGHT,
+                settings.width,
+                settings.height,
             )
             try {
                 downloadBlob(
@@ -92,7 +98,7 @@ export const App = () => {
                 captured.baseImage.close()
             }
         } catch (cause) {
-            setError(`画像の書き出しに失敗しました: ${errorMessage(cause)}`)
+            setError(t('error.pngExport', { message: errorMessage(cause) }))
         } finally {
             setExportState({ kind: 'idle' })
         }
@@ -107,8 +113,8 @@ export const App = () => {
         try {
             const captured = await captureBaseMap(
                 track,
-                EXPORT_WIDTH,
-                EXPORT_HEIGHT,
+                settings.width,
+                settings.height,
             )
             try {
                 const blob = await renderMp4Blob(
@@ -124,7 +130,7 @@ export const App = () => {
                 captured.baseImage.close()
             }
         } catch (cause) {
-            setError(`動画の書き出しに失敗しました: ${errorMessage(cause)}`)
+            setError(t('error.mp4Export', { message: errorMessage(cause) }))
         } finally {
             setExportState({ kind: 'idle' })
         }
@@ -134,6 +140,7 @@ export const App = () => {
         <div className="app">
             <header className="app-header">
                 <h1>GPX Track Animator</h1>
+                <LanguageSwitcher />
             </header>
             <div className="app-body">
                 <aside className="sidebar">
@@ -150,6 +157,8 @@ export const App = () => {
                         trackLoaded={track !== null}
                         exporting={exportState.kind !== 'idle'}
                         mp4Supported={mp4Supported}
+                        width={settings.width}
+                        height={settings.height}
                         onPreview={() => setPreviewRequestId((id) => id + 1)}
                         onExportPng={handleExportPng}
                         onExportMp4={handleExportMp4}

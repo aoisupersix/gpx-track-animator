@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
 
+import { useI18n } from '../lib/i18n'
+
 import type { ChangeEvent, DragEvent, KeyboardEvent } from 'react'
 
 type Props = {
@@ -8,6 +10,7 @@ type Props = {
 }
 
 export const GpxFileInput = ({ fileName, onFileSelected }: Props) => {
+    const { t } = useI18n()
     const inputRef = useRef<HTMLInputElement | null>(null)
     const [dragOver, setDragOver] = useState(false)
 
@@ -57,7 +60,7 @@ export const GpxFileInput = ({ fileName, onFileSelected }: Props) => {
                 onChange={handleChange}
                 hidden
             />
-            <p>{fileName ?? 'GPXファイルをドロップ、またはクリックして選択'}</p>
+            <p>{fileName ?? t('fileInput.prompt')}</p>
         </div>
     )
 }
