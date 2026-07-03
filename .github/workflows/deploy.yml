@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -17,8 +17,12 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v6
         with:
@@ -27,6 +31,40 @@ jobs:
 
       - run: npm ci
 
+      # Decide the next version from Conventional Commits since the last tag:
+      # BREAKING CHANGE / type! -> major, feat -> minor, otherwise -> patch.
+      - name: Determine next version
+        id: version
+        run: |
+          last_tag=$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]*' --abbrev=0 2>/dev/null || true)
+          if [ -z "$last_tag" ]; then
+            range=""
+            base="0.0.0"
+          else
+            range="$last_tag..HEAD"
+            base="${last_tag#v}"
+          fi
+          messages=$(git log $range --format='%B')
+          if echo "$messages" | grep -qE 'BREAKING CHANGE|^[a-z]+(\([^)]*\))?!:'; then
+            bump=major
+          elif echo "$messages" | grep -qE '^feat(\([^)]*\))?!?:'; then
+            bump=minor
+          else
+            bump=patch
+          fi
+          IFS=. read -r major minor patch <<< "$base"
+          case "$bump" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+          esac
+          next="$major.$minor.$patch"
+          echo "Bump: $bump -> v$next"
+          echo "version=$next" >> "$GITHUB_OUTPUT"
+
+      - name: Apply version to package.json
+        run: npm version "${{ steps.version.outputs.version }}" --no-git-tag-version --allow-same-version
+
       - run: npm run lint
 
       - run: npm run format:check
@@ -34,6 +72,17 @@ jobs:
       - run: npm test
 
       - run: npm run build
+
+      - name: Commit version bump and push tag
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json
+          git commit -m "chore(release): v$version [skip ci]"
+          git tag "v$version"
+          git push origin HEAD:master
+          git push origin "v$version"
 
       - uses: actions/upload-pages-artifact@v3
         with:

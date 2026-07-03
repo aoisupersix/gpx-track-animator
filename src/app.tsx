@@ -206,7 +206,10 @@ export const App = () => {
         <div className="app">
             <header className="app-header">
                 <h1>GPX Track Animator</h1>
-                <LanguageSwitcher />
+                <div className="app-header-actions">
+                    <span className="app-version">v{__APP_VERSION__}</span>
+                    <LanguageSwitcher />
+                </div>
             </header>
             <div className="app-body">
                 <aside className="sidebar">
