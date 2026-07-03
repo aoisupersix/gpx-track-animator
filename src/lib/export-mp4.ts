@@ -9,6 +9,7 @@ import {
 import { DEFAULT_EXPORT_HEIGHT, DEFAULT_EXPORT_WIDTH } from './constants'
 import { h264CodecString, videoBitrate } from './encode-config'
 import { partialPath } from './pixel-path'
+import { headDistanceFraction } from './speed'
 import {
     anyPinAnimating,
     createFrameContext,
@@ -34,7 +35,8 @@ export const isH264EncodeSupported = (): Promise<boolean> =>
 
 /**
  * Encodes the track animation as an H.264 MP4. The track grows from start to
- * end over `durationSec` at constant geographic speed, then the full track
+ * end over `durationSec` — at constant geographic speed, or following the
+ * recorded GPX pace when `settings.speedBased` is on — then the full track
  * stays visible for `endHoldSec`.
  */
 export const renderMp4Blob = async (
@@ -68,7 +70,13 @@ export const renderMp4Blob = async (
     const pinStyle = toPinStyle(settings)
     let lastProgress = -1
     for (let frame = 0; frame < totalFrames; frame++) {
-        const progress = Math.min(frame / (animationFrames - 1), 1)
+        const animFraction = Math.min(frame / (animationFrames - 1), 1)
+        const progress = headDistanceFraction(
+            track,
+            settings.speedBased,
+            settings.pauseOnStop,
+            animFraction,
+        )
         const elapsedSec = frame / settings.fps
         // Keep redrawing while pins animate, even after the line is complete.
         if (

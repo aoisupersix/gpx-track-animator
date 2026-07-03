@@ -139,6 +139,27 @@ export const SettingsForm = ({ settings, disabled, onChange }: Props) => {
                     }
                 />
             </label>
+            <label className="settings-checkbox">
+                <input
+                    type="checkbox"
+                    checked={settings.speedBased}
+                    onChange={(event) =>
+                        update({ speedBased: event.target.checked })
+                    }
+                />
+                {t('settings.speedBased')}
+            </label>
+            <label className="settings-checkbox">
+                <input
+                    type="checkbox"
+                    checked={settings.pauseOnStop}
+                    disabled={!settings.speedBased}
+                    onChange={(event) =>
+                        update({ pauseOnStop: event.target.checked })
+                    }
+                />
+                {t('settings.pauseOnStop')}
+            </label>
             <label>
                 {t('settings.fps')}
                 <select

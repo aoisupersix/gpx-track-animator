@@ -46,6 +46,19 @@ describe('parseGpx', () => {
         ])
     })
 
+    it('attaches timestamps in epoch milliseconds when present', () => {
+        const text = wrapGpx(
+            `<trk><trkseg>` +
+                `<trkpt lat="35.0" lon="139.0"><time>2024-01-01T00:00:00Z</time></trkpt>` +
+                `<trkpt lat="35.1" lon="139.1"><time>2024-01-01T00:00:30Z</time></trkpt>` +
+                `</trkseg></trk>`,
+        )
+        expect(parseGpx(text)).toEqual([
+            { lon: 139.0, lat: 35.0, time: Date.parse('2024-01-01T00:00:00Z') },
+            { lon: 139.1, lat: 35.1, time: Date.parse('2024-01-01T00:00:30Z') },
+        ])
+    })
+
     it('throws GpxParseError for invalid XML', () => {
         expect(() => parseGpx('this is not xml')).toThrow(GpxParseError)
     })

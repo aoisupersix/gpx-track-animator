@@ -49,4 +49,27 @@ describe('buildTrack', () => {
             [139.1, 35.2],
         ])
     })
+
+    it('leaves timing undefined without timestamps', () => {
+        const track = buildTrack(points)
+        expect(track.cumulativeTime).toBeUndefined()
+        expect(track.totalTime).toBeUndefined()
+        expect(track.cumulativeMovingTime).toBeUndefined()
+    })
+
+    it('excludes jittery stops from moving time', () => {
+        const base = Date.parse('2024-01-01T00:00:00Z')
+        // Move ~440 m, then jitter ~2 m over 60 s (a stop), then move ~440 m.
+        const timed = [
+            { lon: 139.0, lat: 35.0, time: base },
+            { lon: 139.005, lat: 35.0, time: base + 30_000 },
+            { lon: 139.00502, lat: 35.0, time: base + 90_000 },
+            { lon: 139.01, lat: 35.0, time: base + 120_000 },
+        ]
+        const track = buildTrack(timed)
+        expect(track.totalTime).toBe(120)
+        // The 60 s stop is dropped: only the two 30 s moving segments remain.
+        expect(track.totalMovingTime).toBe(60)
+        expect(track.cumulativeMovingTime).toEqual([0, 30, 30, 60])
+    })
 })

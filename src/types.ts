@@ -1,6 +1,8 @@
 export type TrackPoint = {
     lon: number
     lat: number
+    /** Recorded timestamp in epoch milliseconds, when the GPX provides one. */
+    time?: number
 }
 
 export type Track = {
@@ -9,6 +11,21 @@ export type Track = {
     cumulative: number[]
     /** Total track length in meters. */
     totalDistance: number
+    /**
+     * Cumulative recorded time in seconds from the start; cumulativeTime[i]
+     * corresponds to points[i]. Present only when every point carries a valid,
+     * non-decreasing timestamp. Absent tracks fall back to constant speed.
+     */
+    cumulativeTime?: number[]
+    /** Total recorded duration in seconds; present alongside cumulativeTime. */
+    totalTime?: number
+    /**
+     * Cumulative time in seconds excluding stationary periods (segments with no
+     * movement), so the head never halts. Present alongside cumulativeTime.
+     */
+    cumulativeMovingTime?: number[]
+    /** Total moving duration in seconds; present alongside cumulativeMovingTime. */
+    totalMovingTime?: number
     /** [[west, south], [east, north]] */
     bounds: [[number, number], [number, number]]
 }
@@ -49,4 +66,16 @@ export type RenderSettings = {
     pinDropSec: number
     /** Pin landing bounce (0 = smooth ease, 1 = full bounce). */
     pinBounce: number
+    /**
+     * When true, the head follows the pace recorded in the GPX timestamps so it
+     * lingers on slow sections and races on fast ones. Falls back to constant
+     * speed for tracks without timestamps.
+     */
+    speedBased: boolean
+    /**
+     * When true, the head halts during recorded stops (stationary periods).
+     * When false, those pauses are collapsed so the head keeps moving. Only
+     * affects speed-based playback.
+     */
+    pauseOnStop: boolean
 }

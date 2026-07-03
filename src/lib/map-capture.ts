@@ -2,6 +2,7 @@ import maplibregl from 'maplibre-gl'
 
 import { EXPORT_PADDING_PX, MAP_IDLE_TIMEOUT_MS } from './constants'
 import { osmRasterStyle } from './osm-style'
+import { pinAppearFraction } from './speed'
 
 import type { PinRender } from './track-renderer'
 import type { PixelPoint, RoutePin, Track } from '../types'
@@ -53,6 +54,8 @@ export const captureBaseMap = async (
     pins: RoutePin[],
     width: number,
     height: number,
+    speedBased: boolean,
+    pauseOnStop: boolean,
 ): Promise<CapturedMap> => {
     const container = document.createElement('div')
     // The container must have real layout dimensions, so it is hidden with
@@ -86,7 +89,12 @@ export const captureBaseMap = async (
             const projected = map.project([pin.lon, pin.lat])
             return {
                 pixel: { x: projected.x, y: projected.y },
-                progress: pin.progress,
+                appearAt: pinAppearFraction(
+                    track,
+                    speedBased,
+                    pauseOnStop,
+                    pin.progress,
+                ),
                 label: pin.label,
             }
         })

@@ -28,6 +28,13 @@ export const MAX_EXPORT_SIZE = 7680
 /** Padding in pixels around the track when fitting the export map view. */
 export const EXPORT_PADDING_PX = 100
 
+/**
+ * Speed (m/s) below which a segment counts as a stop when collapsing pauses.
+ * Set under walking pace so GPS jitter while standing still (a few meters over
+ * tens of seconds) is treated as stationary rather than slow movement.
+ */
+export const STOP_SPEED_MPS = 0.5
+
 export const MAP_IDLE_TIMEOUT_MS = 30_000
 
 export const DEFAULT_SETTINGS: RenderSettings = {
@@ -42,4 +49,6 @@ export const DEFAULT_SETTINGS: RenderSettings = {
     pinDropHeight: 3.5,
     pinDropSec: 0.5,
     pinBounce: 1,
+    speedBased: true,
+    pauseOnStop: false,
 }

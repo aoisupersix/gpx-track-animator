@@ -9,7 +9,8 @@ export type FrameStyle = {
 /** A pin resolved to canvas pixel coordinates, ready to draw. */
 export type PinRender = {
     pixel: PixelPoint
-    progress: number
+    /** Animation progress (0..1) at which the head reaches the pin and it drops in. */
+    appearAt: number
     label: string
 }
 
@@ -143,7 +144,7 @@ const PIN_FADE_PORTION = 0.35
 
 /** Elapsed time (seconds) at which a pin's drop-in animation begins. */
 const pinAppearSec = (pin: PinRender, durationSec: number): number =>
-    pin.progress * durationSec
+    pin.appearAt * durationSec
 
 /** True while any pin's drop-in animation is still playing at `elapsedSec`. */
 export const anyPinAnimating = (

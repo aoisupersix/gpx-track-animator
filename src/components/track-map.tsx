@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useI18n } from '../lib/i18n'
 import { osmRasterStyle } from '../lib/osm-style'
 import { partialPath } from '../lib/pixel-path'
+import { headDistanceFraction, pinAppearFraction } from '../lib/speed'
 import {
     drawPins,
     drawTrackFrame,
@@ -49,7 +50,7 @@ export const TrackMap = ({
     const trackRef = useRef<Track | null>(null)
     const settingsRef = useRef<RenderSettings>(settings)
     const pinsRef = useRef<RoutePin[]>(pins)
-    /** Currently drawn animation progress; 1 means the full track. */
+    /** Animation progress (0..1 of the duration); 1 means the full track. */
     const progressRef = useRef(1)
     /** Elapsed playback time in seconds; Infinity means fully settled. */
     const elapsedRef = useRef(Infinity)
@@ -84,10 +85,16 @@ export const TrackMap = ({
             const projected = map.project([point.lon, point.lat])
             return { x: projected.x, y: projected.y }
         })
+        const { speedBased, pauseOnStop } = settingsRef.current
         const path = partialPath(
             pixels,
             currentTrack.cumulative,
-            progressRef.current,
+            headDistanceFraction(
+                currentTrack,
+                speedBased,
+                pauseOnStop,
+                progressRef.current,
+            ),
         )
         drawTrackFrame(
             ctx,
@@ -100,7 +107,12 @@ export const TrackMap = ({
             const projected = map.project([pin.lon, pin.lat])
             return {
                 pixel: { x: projected.x, y: projected.y },
-                progress: pin.progress,
+                appearAt: pinAppearFraction(
+                    currentTrack,
+                    speedBased,
+                    pauseOnStop,
+                    pin.progress,
+                ),
                 label: pin.label,
             }
         })

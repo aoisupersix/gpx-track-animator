@@ -149,6 +149,8 @@ export const App = () => {
                 pins,
                 settings.width,
                 settings.height,
+                settings.speedBased,
+                settings.pauseOnStop,
             )
             try {
                 downloadBlob(
@@ -177,6 +179,8 @@ export const App = () => {
                 pins,
                 settings.width,
                 settings.height,
+                settings.speedBased,
+                settings.pauseOnStop,
             )
             try {
                 const blob = await renderMp4Blob(
