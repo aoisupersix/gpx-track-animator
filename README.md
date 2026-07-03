@@ -3,6 +3,10 @@
 A browser tool that draws the route from a GPX file on a map and exports it as a
 still image or an animated video. All processing runs locally in the browser.
 
+## Application
+
+https://aoisupersix.github.io/gpx-track-animator/
+
 ## Features
 
 - Load a GPX file by drag-and-drop or file picker
