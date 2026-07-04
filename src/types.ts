@@ -52,6 +52,8 @@ export type RenderSettings = {
     width: number
     /** Output height in pixels (must be even for H.264). */
     height: number
+    /** How long only the start point stays visible before the animation begins, in seconds. */
+    startHoldSec: number
     /** Duration of the start-to-end animation in seconds. */
     durationSec: number
     /** How long the full track stays visible at the end of the video, in seconds. */
@@ -60,6 +62,8 @@ export type RenderSettings = {
     lineColor: string
     lineOpacity: number
     lineWidth: number
+    /** Overall pin size multiplier applied to every pin's head and label. */
+    pinScale: number
     /** Pin drop-in start height as a multiple of the pin radius (0 disables it). */
     pinDropHeight: number
     /** Duration of a pin's drop-in animation in seconds. */
