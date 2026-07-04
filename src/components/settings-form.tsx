@@ -228,6 +228,21 @@ export const SettingsForm = ({ settings, disabled, onChange }: Props) => {
                 />
             </label>
             <label>
+                {t('settings.pinScale', {
+                    value: settings.pinScale.toFixed(2),
+                })}
+                <input
+                    type="range"
+                    min={0.5}
+                    max={3}
+                    step={0.1}
+                    value={settings.pinScale}
+                    onChange={(event) =>
+                        applyNumber(event, (pinScale) => update({ pinScale }))
+                    }
+                />
+            </label>
+            <label>
                 {t('settings.pinDropHeight')}
                 <input
                     type="number"

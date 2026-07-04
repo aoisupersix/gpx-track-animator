@@ -62,6 +62,8 @@ export type RenderSettings = {
     lineColor: string
     lineOpacity: number
     lineWidth: number
+    /** Overall pin size multiplier applied to every pin's head and label. */
+    pinScale: number
     /** Pin drop-in start height as a multiple of the pin radius (0 disables it). */
     pinDropHeight: number
     /** Duration of a pin's drop-in animation in seconds. */

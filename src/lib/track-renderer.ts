@@ -41,11 +41,12 @@ export const toFrameStyle = (settings: RenderSettings): FrameStyle => ({
 
 /** Pin dimensions scale with the line width so they stay proportional. */
 export const toPinStyle = (settings: RenderSettings): PinStyle => {
-    const radius = Math.max(settings.lineWidth * 1.4, 8)
+    const scale = Math.max(settings.pinScale, 0)
+    const radius = Math.max(settings.lineWidth * 1.4, 8) * scale
     return {
         radius,
         color: settings.lineColor,
-        fontPx: Math.max(settings.lineWidth * 2.2, 16),
+        fontPx: Math.max(settings.lineWidth * 2.2, 16) * scale,
         dropHeight: radius * Math.max(settings.pinDropHeight, 0),
         // Clamp above zero so the animation timeline never divides by zero.
         animSec: Math.max(settings.pinDropSec, 0.01),
