@@ -187,17 +187,22 @@ export const TrackMap = ({
         if (previewRequestId === 0 || trackRef.current === null) {
             return
         }
+        const startHoldMs = Math.max(settingsRef.current.startHoldSec, 0) * 1000
         const durationMs = Math.max(settingsRef.current.durationSec, 0.1) * 1000
-        // Play through the end hold so late pins finish their drop-in, matching
-        // the exported video.
+        // Hold on the start point, then play through the end hold so late pins
+        // finish their drop-in, matching the exported video.
         const totalMs =
-            durationMs + Math.max(settingsRef.current.endHoldSec, 0) * 1000
+            startHoldMs +
+            durationMs +
+            Math.max(settingsRef.current.endHoldSec, 0) * 1000
         const start = performance.now()
         let frameHandle = 0
         const tick = (now: number): void => {
             const elapsedMs = now - start
-            progressRef.current = Math.min(elapsedMs / durationMs, 1)
-            elapsedRef.current = elapsedMs / 1000
+            // Negative until the start hold ends: head stays put, no pins yet.
+            const animMs = elapsedMs - startHoldMs
+            progressRef.current = Math.min(Math.max(animMs, 0) / durationMs, 1)
+            elapsedRef.current = animMs / 1000
             if (elapsedMs < totalMs) {
                 redraw()
                 frameHandle = requestAnimationFrame(tick)

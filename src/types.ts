@@ -52,6 +52,8 @@ export type RenderSettings = {
     width: number
     /** Output height in pixels (must be even for H.264). */
     height: number
+    /** How long only the start point stays visible before the animation begins, in seconds. */
+    startHoldSec: number
     /** Duration of the start-to-end animation in seconds. */
     durationSec: number
     /** How long the full track stays visible at the end of the video, in seconds. */

@@ -110,6 +110,21 @@ export const SettingsForm = ({ settings, disabled, onChange }: Props) => {
                 />
             </label>
             <label>
+                {t('settings.startHold')}
+                <input
+                    type="number"
+                    min={0}
+                    max={10}
+                    step={0.1}
+                    value={settings.startHoldSec}
+                    onChange={(event) =>
+                        applyNumber(event, (startHoldSec) =>
+                            update({ startHoldSec }),
+                        )
+                    }
+                />
+            </label>
+            <label>
                 {t('settings.duration')}
                 <input
                     type="number"

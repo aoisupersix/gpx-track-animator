@@ -40,6 +40,7 @@ export const MAP_IDLE_TIMEOUT_MS = 30_000
 export const DEFAULT_SETTINGS: RenderSettings = {
     width: DEFAULT_EXPORT_WIDTH,
     height: DEFAULT_EXPORT_HEIGHT,
+    startHoldSec: 2,
     durationSec: 2.5,
     endHoldSec: 1,
     fps: 60,

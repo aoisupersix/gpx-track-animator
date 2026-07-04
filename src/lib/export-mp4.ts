@@ -34,10 +34,11 @@ export const isH264EncodeSupported = (): Promise<boolean> =>
     })
 
 /**
- * Encodes the track animation as an H.264 MP4. The track grows from start to
- * end over `durationSec` — at constant geographic speed, or following the
- * recorded GPX pace when `settings.speedBased` is on — then the full track
- * stays visible for `endHoldSec`.
+ * Encodes the track animation as an H.264 MP4. Only the start point shows for
+ * `startHoldSec`, then the track grows from start to end over `durationSec` —
+ * at constant geographic speed, or following the recorded GPX pace when
+ * `settings.speedBased` is on — then the full track stays visible for
+ * `endHoldSec`.
  */
 export const renderMp4Blob = async (
     captured: CapturedMap,
@@ -60,24 +61,31 @@ export const renderMp4Blob = async (
     })
     output.addVideoTrack(source, { frameRate: settings.fps })
     await output.start()
+    const startHoldFrames = Math.round(settings.startHoldSec * settings.fps)
     const animationFrames = Math.max(
         Math.round(settings.durationSec * settings.fps),
         2,
     )
     const holdFrames = Math.round(settings.endHoldSec * settings.fps)
-    const totalFrames = animationFrames + holdFrames
+    const totalFrames = startHoldFrames + animationFrames + holdFrames
     const style = toFrameStyle(settings)
     const pinStyle = toPinStyle(settings)
     let lastProgress = -1
     for (let frame = 0; frame < totalFrames; frame++) {
-        const animFraction = Math.min(frame / (animationFrames - 1), 1)
+        // Negative during the start hold, so the head stays at the origin and
+        // no pin has appeared yet.
+        const animFrame = frame - startHoldFrames
+        const animFraction = Math.min(
+            Math.max(animFrame, 0) / (animationFrames - 1),
+            1,
+        )
         const progress = headDistanceFraction(
             track,
             settings.speedBased,
             settings.pauseOnStop,
             animFraction,
         )
-        const elapsedSec = frame / settings.fps
+        const elapsedSec = animFrame / settings.fps
         // Keep redrawing while pins animate, even after the line is complete.
         if (
             progress !== lastProgress ||
