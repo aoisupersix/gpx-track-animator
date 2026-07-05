@@ -109,6 +109,64 @@ export const SettingsForm = ({ settings, disabled, onChange }: Props) => {
                     }
                 />
             </label>
+            <label className="settings-checkbox">
+                <input
+                    type="checkbox"
+                    checked={settings.zoomIntro}
+                    onChange={(event) =>
+                        update({ zoomIntro: event.target.checked })
+                    }
+                />
+                {t('settings.zoomIntro')}
+            </label>
+            <label>
+                {t('settings.zoomInitialLevel')}
+                <input
+                    type="number"
+                    min={0}
+                    max={16}
+                    step={0.5}
+                    disabled={!settings.zoomIntro}
+                    value={settings.zoomInitialLevel}
+                    onChange={(event) =>
+                        applyNumber(event, (zoomInitialLevel) =>
+                            update({ zoomInitialLevel }),
+                        )
+                    }
+                />
+            </label>
+            <label>
+                {t('settings.preZoomHold')}
+                <input
+                    type="number"
+                    min={0}
+                    max={10}
+                    step={0.1}
+                    disabled={!settings.zoomIntro}
+                    value={settings.preZoomHoldSec}
+                    onChange={(event) =>
+                        applyNumber(event, (preZoomHoldSec) =>
+                            update({ preZoomHoldSec }),
+                        )
+                    }
+                />
+            </label>
+            <label>
+                {t('settings.zoomDuration')}
+                <input
+                    type="number"
+                    min={0}
+                    max={10}
+                    step={0.1}
+                    disabled={!settings.zoomIntro}
+                    value={settings.zoomDurationSec}
+                    onChange={(event) =>
+                        applyNumber(event, (zoomDurationSec) =>
+                            update({ zoomDurationSec }),
+                        )
+                    }
+                />
+            </label>
             <label>
                 {t('settings.startHold')}
                 <input
@@ -144,7 +202,7 @@ export const SettingsForm = ({ settings, disabled, onChange }: Props) => {
                 <input
                     type="number"
                     min={0}
-                    max={10}
+                    max={60}
                     step={0.1}
                     value={settings.endHoldSec}
                     onChange={(event) =>

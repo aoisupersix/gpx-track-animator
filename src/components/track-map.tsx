@@ -11,8 +11,10 @@ import {
     toFrameStyle,
     toPinStyle,
 } from '../lib/track-renderer'
+import { introCamera } from '../lib/zoom'
 
 import type { PinRender } from '../lib/track-renderer'
+import type { Camera } from '../lib/zoom'
 import type { RenderSettings, RoutePin, Track } from '../types'
 import type { PixelPoint } from '../types'
 import type { LngLat } from 'maplibre-gl'
@@ -184,23 +186,91 @@ export const TrackMap = ({
     }, [addingPin, onPlacePin])
 
     useEffect(() => {
-        if (previewRequestId === 0 || trackRef.current === null) {
+        const currentTrack = trackRef.current
+        const map = mapRef.current
+        if (previewRequestId === 0 || currentTrack === null) {
             return
         }
-        const startHoldMs = Math.max(settingsRef.current.startHoldSec, 0) * 1000
-        const durationMs = Math.max(settingsRef.current.durationSec, 0.1) * 1000
-        // Hold on the start point, then play through the end hold so late pins
-        // finish their drop-in, matching the exported video.
+        const settings = settingsRef.current
+        // Resolve the opening-zoom cameras against the current (fitted) view.
+        // The overview shares the fitted center and only pulls the zoom out.
+        let intro: { start: Camera; final: Camera } | null = null
+        if (settings.zoomIntro && map !== null) {
+            const fit = map.cameraForBounds(currentTrack.bounds, {
+                padding: 60,
+            })
+            if (fit?.center !== undefined) {
+                const center = maplibregl.LngLat.convert(fit.center)
+                const final: Camera = {
+                    center: [center.lng, center.lat],
+                    zoom: fit.zoom ?? map.getZoom(),
+                }
+                intro = {
+                    start: {
+                        center: final.center,
+                        zoom: settings.zoomInitialLevel,
+                    },
+                    final,
+                }
+            }
+        }
+        const preZoomHoldMs =
+            intro === null ? 0 : Math.max(settings.preZoomHoldSec, 0) * 1000
+        const introMs =
+            intro === null ? 0 : Math.max(settings.zoomDurationSec, 0) * 1000
+        const startHoldMs = Math.max(settings.startHoldSec, 0) * 1000
+        const durationMs = Math.max(settings.durationSec, 0.1) * 1000
+        // Hold the overview, zoom in, hold on the start point, then play
+        // through the end hold so late pins finish their drop-in, matching the
+        // exported video.
         const totalMs =
+            preZoomHoldMs +
+            introMs +
             startHoldMs +
             durationMs +
-            Math.max(settingsRef.current.endHoldSec, 0) * 1000
+            Math.max(settings.endHoldSec, 0) * 1000
         const start = performance.now()
+        let settled = false
         let frameHandle = 0
         const tick = (now: number): void => {
             const elapsedMs = now - start
+            if (intro !== null && map !== null && elapsedMs < preZoomHoldMs) {
+                // Pre-zoom hold: the wide overview stays still, no pins yet.
+                map.jumpTo({
+                    center: intro.start.center,
+                    zoom: intro.start.zoom,
+                })
+                progressRef.current = 0
+                elapsedRef.current = -1
+                redraw()
+                frameHandle = requestAnimationFrame(tick)
+                return
+            }
+            const zoomMs = elapsedMs - preZoomHoldMs
+            if (intro !== null && map !== null && zoomMs < introMs) {
+                // Opening zoom: head stays at the start, no pins yet.
+                const camera = introCamera(
+                    intro.start,
+                    intro.final,
+                    zoomMs / introMs,
+                )
+                map.jumpTo({ center: camera.center, zoom: camera.zoom })
+                progressRef.current = 0
+                elapsedRef.current = -1
+                redraw()
+                frameHandle = requestAnimationFrame(tick)
+                return
+            }
+            if (intro !== null && map !== null && !settled) {
+                // Land exactly on the fitted view before the track animation.
+                map.jumpTo({
+                    center: intro.final.center,
+                    zoom: intro.final.zoom,
+                })
+                settled = true
+            }
             // Negative until the start hold ends: head stays put, no pins yet.
-            const animMs = elapsedMs - startHoldMs
+            const animMs = elapsedMs - preZoomHoldMs - introMs - startHoldMs
             progressRef.current = Math.min(Math.max(animMs, 0) / durationMs, 1)
             elapsedRef.current = animMs / 1000
             if (elapsedMs < totalMs) {
