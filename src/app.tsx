@@ -14,7 +14,7 @@ import { renderPngBlob } from './lib/export-png'
 import { buildTrack, haversineDistance } from './lib/geo'
 import { GpxParseError, parseGpx } from './lib/gpx'
 import { useI18n } from './lib/i18n'
-import { captureBaseMap } from './lib/map-capture'
+import { captureBaseMap, openMapSession } from './lib/map-capture'
 
 import type { RenderSettings, RoutePin, Track } from './types'
 import type { LngLat } from 'maplibre-gl'
@@ -174,26 +174,33 @@ export const App = () => {
         setExportState({ kind: 'mp4', progress: 0 })
         setError(null)
         try {
-            const captured = await captureBaseMap(
+            const session = await openMapSession(
                 track,
                 pins,
                 settings.width,
                 settings.height,
                 settings.speedBased,
                 settings.pauseOnStop,
+                settings.zoomInitialLevel,
             )
             try {
-                const blob = await renderMp4Blob(
-                    captured,
-                    track,
-                    settings,
-                    (progress) => {
-                        setExportState({ kind: 'mp4', progress })
-                    },
-                )
-                downloadBlob(blob, `${outputBaseName}.mp4`)
+                const captured = await session.captureFinal()
+                try {
+                    const blob = await renderMp4Blob(
+                        session,
+                        captured,
+                        track,
+                        settings,
+                        (progress) => {
+                            setExportState({ kind: 'mp4', progress })
+                        },
+                    )
+                    downloadBlob(blob, `${outputBaseName}.mp4`)
+                } finally {
+                    captured.baseImage.close()
+                }
             } finally {
-                captured.baseImage.close()
+                session.close()
             }
         } catch (cause) {
             setError(t('error.mp4Export', { message: errorMessage(cause) }))

@@ -52,7 +52,24 @@ export type RenderSettings = {
     width: number
     /** Output height in pixels (must be even for H.264). */
     height: number
-    /** How long only the start point stays visible before the animation begins, in seconds. */
+    /**
+     * When true, the animation opens on a wide overview and zooms in to the
+     * full track view (centered on the fitted view) before the start hold.
+     */
+    zoomIntro: boolean
+    /**
+     * Absolute MapLibre zoom level the overview starts at; lower is wider.
+     * The default (~4.5) shows all of Japan.
+     */
+    zoomInitialLevel: number
+    /** How long the wide overview holds before the zoom-in starts, in seconds. */
+    preZoomHoldSec: number
+    /** Duration of the opening zoom-in in seconds. */
+    zoomDurationSec: number
+    /**
+     * How long only the start point stays visible after the zoom-in, before the
+     * track animation begins, in seconds.
+     */
     startHoldSec: number
     /** Duration of the start-to-end animation in seconds. */
     durationSec: number
